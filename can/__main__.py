@@ -15,26 +15,8 @@ else:
     Window = Any
 
 
-class Formatting:
-    Bold = "\x1b[1m"
-    Dim = "\x1b[2m"
-    Italic = "\x1b[3m"
-    Underlined = "\x1b[4m"
-    Blink = "\x1b[5m"
-    Reverse = "\x1b[7m"
-    Hidden = "\x1b[8m"
-    Reset = "\x1b[0m"
-
-
-class Color:
-    Default = "\x1b[39m"
-    Black = "\x1b[30m"
-    Red = "\x1b[31m"
-    Green = "\x1b[32m"
-    Yellow = "\x1b[33m"
-    Blue = "\x1b[34m"
-    Magenta = "\x1b[35m"
-    Cyan = "\x1b[36m"
+curses.init_pair(1, curses.COLOR_WHITE, curses.COLOR_BLACK)
+curses.init_pair(2, curses.COLOR_RED, curses.COLOR_BLACK)
 
 
 class CANSniffer:
@@ -51,25 +33,8 @@ class CANSniffer:
     def get_bit_string(self, _bytes: bytearray, separator: str = " ") -> str:
         return separator.join([format(byte, "08b") for byte in _bytes])
 
-    def update_data_string(self, message: can.Message) -> None:
-        old_bit_string = (
-            self.get_bit_string(self.raw_data[message.arbitration_id].data)
-            if self.raw_data.get(message.arbitration_id) is not None
-            else ""
-        )
-        new_bit_string = self.get_bit_string(message.data)
-
-        data_string = ""
-
-        for index, bit in enumerate(new_bit_string):
-            if bit != old_bit_string[index]:
-                data_string += f"{Formatting.Bold}{Color.Yellow}{bit}{Color.Default}{Formatting.Reset}"
-            else:
-                data_string += bit
-
-        self.data_strings[
-            message.arbitration_id
-        ] = f"{message.arbitration_id:0>8x} |   {message.dlc}    | {data_string}"
+    def get_data_string(self, message: can.Message) -> None:
+        return f"{message.arbitration_id:0>8x} |   {message.dlc}    | {self.get_bit_string(message.data)}"
 
     def update_parsed_data(self, message: can.Message) -> None:
         if self.data_map.get(message.arbitration_id) is not None:
@@ -77,22 +42,47 @@ class CANSniffer:
             for name, bit_range in self.data_map[message.arbitration_id]:
                 self.parsed_data[name] = int(bit_string[bit_range[0] : bit_range[1]])
 
-    def update_screen(self) -> None:
-        rows, cols = self.stdscr.getmaxyx()
+    def init_screen(self) -> None:
+        rows, _ = self.stdscr.getmaxyx()
         parsed_height = floor(rows / 3)
 
         self.stdscr.addstr(
             parsed_height + 1,
             0,
-            "--ArbId--|-Length-|-Data-------------------------------------------------------------------",
+            "-ArbId---|-Length-|-Data-------------------------------------------------------------------",
         )
 
-        arb_ids = sorted(self.data_strings.keys())
+    def update_screen_raw_data(self) -> None:
+        rows, _ = self.stdscr.getmaxyx()
+        parsed_height = floor(rows / 3)
+
+        arb_ids = sorted(self.raw_data.keys())
 
         for index, id in enumerate(arb_ids):
             row = parsed_height + index + 2
+            string = self.get_data_string(self.raw_data[id])
+
             if row < rows:
-                self.stdscr.addstr(row, 0, self.data_strings[id])
+                for col, char in enumerate(string):
+                    changed = (
+                        self.data_strings.get(id) is None
+                        or col > len(self.data_strings[id]) - 1
+                        or char != self.data_strings[id][col]
+                    )
+                    self.stdscr.addstr(
+                        row,
+                        col,
+                        char,
+                        curses.color_pair(2) | curses.A_BOLD
+                        if changed
+                        else curses.color_pair(1),
+                    )
+
+            self.data_strings[id] = string
+
+    def update_screen_parsed_data(self) -> None:
+        rows, cols = self.stdscr.getmaxyx()
+        parsed_height = floor(rows / 3)
 
         parsed_data_names = sorted(self.parsed_data.keys())
         parsed_data_columns = ceil(len(parsed_data_names) / parsed_height)
@@ -112,6 +102,10 @@ class CANSniffer:
                 )
                 row += 1
 
+    def update_screen(self) -> None:
+        self.update_screen_raw_data()
+        self.update_screen_parsed_data()
+
     async def run(self, stdscr: Window) -> None:
         with can.Bus(
             channel="can0", bustype="socketcan", receive_own_messages=True
@@ -119,7 +113,7 @@ class CANSniffer:
             reader = can.AsyncBufferedReader()
             loop = asyncio.get_running_loop()
 
-            self.update_screen()
+            self.init_screen()
             self.stdscr.refresh()
 
             try:
