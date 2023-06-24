@@ -68,7 +68,7 @@ def update_data_string(message: can.Message) -> None:
 
     data_strings[
         message.arbitration_id
-    ] = f"{message.arbitration_id:0>4x} | {message.dlc} | {data_string}"
+    ] = f"{message.arbitration_id:0>8x} | {message.dlc} | {data_string}"
 
 
 def update_parsed_data(message: can.Message) -> None:
@@ -98,6 +98,12 @@ def update_screen(stdscr: Window) -> None:
     rrows, _ = raw_data_window.getmaxyx()
     if rrows != raw_height:
         raw_data_window.resize(raw_height, cols)
+
+    raw_data_window.addstr(
+        0,
+        0,
+        "-ArbId--|-Length-|-Data-------------------------------------------------------------------",
+    )
 
     arb_ids = sorted(data_strings.keys)
 
