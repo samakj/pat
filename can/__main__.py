@@ -89,7 +89,7 @@ def update_screen(stdscr: Window) -> None:
         "-ArbId--|-Length-|-Data-------------------------------------------------------------------",
     )
 
-    arb_ids = sorted(data_strings.keys)
+    arb_ids = sorted(data_strings.keys())
 
     for index, id in enumerate(arb_ids):
         stdscr.addstr(rows + index - len(arb_ids), 0, data_strings[id])
