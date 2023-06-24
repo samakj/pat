@@ -84,7 +84,7 @@ def update_screen(stdscr: Window) -> None:
     parsed_height = floor(rows / 3)
 
     stdscr.addstr(
-        0,
+        parsed_height + 1,
         0,
         "-ArbId--|-Length-|-Data-------------------------------------------------------------------",
     )
@@ -92,7 +92,9 @@ def update_screen(stdscr: Window) -> None:
     arb_ids = sorted(data_strings.keys())
 
     for index, id in enumerate(arb_ids):
-        stdscr.addstr(rows + index - len(arb_ids), 0, data_strings[id])
+        row = parsed_height + index + 2
+        if row < rows:
+            stdscr.addstr(row, 0, data_strings[id])
 
     parsed_data_names = sorted(parsed_data.keys())
     parsed_data_columns = ceil(len(parsed_data_names) / parsed_height)
