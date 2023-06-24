@@ -137,10 +137,9 @@ async def main(stdscr: Window) -> None:
                 if t - last_refresh > 30:
                     stdscr.refresh()
                     last_refresh = t
-        except Exception as error:
-            print(error)
-        finally:
+        except:
             notifier.stop()
+            raise
 
 
 def run_async(stdscr: Window) -> None:
