@@ -118,7 +118,7 @@ def update_screen(stdscr: Window) -> None:
 async def main(stdscr: Window) -> None:
     last_refresh = 0
 
-    with can.Bus(channel="can0", bustype="socketcan") as bus:
+    with can.Bus(channel="can0", bustype="socketcan", receive_own_messages=True) as bus:
         reader = can.AsyncBufferedReader()
         loop = asyncio.get_running_loop()
 
@@ -137,8 +137,8 @@ async def main(stdscr: Window) -> None:
                 if t - last_refresh > 30:
                     stdscr.refresh()
                     last_refresh = t
-        except:
-            pass
+        except Exception as error:
+            print(error)
         finally:
             notifier.stop()
 
