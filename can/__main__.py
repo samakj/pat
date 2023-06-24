@@ -2,6 +2,7 @@ import asyncio
 from typing import Optional, TYPE_CHECKING
 import can
 import curses
+from time import time
 from math import floor, ceil
 
 if TYPE_CHECKING:
@@ -129,10 +130,21 @@ def update_screen(stdscr: Window) -> None:
             row += 1
 
 
+def refresh_screen() -> None:
+    if parsed_data_window != None:
+        parsed_data_window.refresh()
+    if raw_data_window != None:
+        raw_data_window.refresh()
+
+
 async def main(stdscr: Window) -> None:
+    last_refresh = 0
     with can.Bus(channel="can0", bustype="socketcan") as bus:
         reader = can.AsyncBufferedReader()
         loop = asyncio.get_running_loop()
+
+        update_screen(stdscr)
+        refresh_screen()
 
         try:
             notifier = can.Notifier(bus, [reader], loop=loop)
@@ -141,6 +153,11 @@ async def main(stdscr: Window) -> None:
                 update_data_string(message)
                 update_parsed_data(message)
                 update_screen(stdscr)
+
+                t = round(time() * 1000)
+                if t - last_refresh > 30:
+                    refresh_screen()
+                    last_refresh = t
         except:
             pass
         finally:
