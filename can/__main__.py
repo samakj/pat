@@ -79,28 +79,11 @@ def update_parsed_data(message: can.Message) -> None:
             parsed_data[name] = int(bit_string[bit_range[0] : bit_range[1]])
 
 
-parsed_data_window: Optional[Window] = None
-raw_data_window: Optional[Window] = None
-
-
 def update_screen(stdscr: Window) -> None:
     rows, cols = stdscr.getmaxyx()
     parsed_height = floor(rows / 3)
-    raw_height = floor(2 * rows / 3)
 
-    if parsed_data_window is None:
-        parsed_data_window = curses.newwin(parsed_height, cols - 1, 0, 0)
-    if raw_data_window is None:
-        raw_data_window = curses.newwin(raw_height, cols - 1, parsed_height + 1, 0)
-
-    prows, _ = parsed_data_window.getmaxyx()
-    if prows != parsed_height:
-        parsed_data_window.resize(parsed_height, cols)
-    rrows, _ = raw_data_window.getmaxyx()
-    if rrows != raw_height:
-        raw_data_window.resize(raw_height, cols)
-
-    raw_data_window.addstr(
+    stdscr.addstr(
         0,
         0,
         "-ArbId--|-Length-|-Data-------------------------------------------------------------------",
@@ -109,7 +92,7 @@ def update_screen(stdscr: Window) -> None:
     arb_ids = sorted(data_strings.keys)
 
     for index, id in enumerate(arb_ids):
-        raw_data_window.addstr(raw_height + index - len(arb_ids), 0, data_strings[id])
+        stdscr.addstr(rows + index - len(arb_ids), 0, data_strings[id])
 
     parsed_data_names = sorted(parsed_data.keys())
     parsed_data_columns = ceil(len(parsed_data_names) / parsed_height)
@@ -122,7 +105,7 @@ def update_screen(stdscr: Window) -> None:
                 row = 0
                 column += 1
 
-            parsed_data_window.addstr(
+            stdscr.addstr(
                 row,
                 floor(column * cols / parsed_data_columns),
                 f"{name:<8} {parsed_data[name]:>4d}",
@@ -130,21 +113,15 @@ def update_screen(stdscr: Window) -> None:
             row += 1
 
 
-def refresh_screen() -> None:
-    if parsed_data_window != None:
-        parsed_data_window.refresh()
-    if raw_data_window != None:
-        raw_data_window.refresh()
-
-
 async def main(stdscr: Window) -> None:
     last_refresh = 0
+
     with can.Bus(channel="can0", bustype="socketcan") as bus:
         reader = can.AsyncBufferedReader()
         loop = asyncio.get_running_loop()
 
         update_screen(stdscr)
-        refresh_screen()
+        stdscr.refresh()
 
         try:
             notifier = can.Notifier(bus, [reader], loop=loop)
@@ -156,7 +133,7 @@ async def main(stdscr: Window) -> None:
 
                 t = round(time() * 1000)
                 if t - last_refresh > 30:
-                    refresh_screen()
+                    stdscr.refresh()
                     last_refresh = t
         except:
             pass
