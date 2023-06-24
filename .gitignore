@@ -1,0 +1,30 @@
+# venv files
+/**/can/**/venv
+/**/can/**/bin
+/**/can/**/include
+/**/can/**/lib
+/**/can/**/lib64
+/**/can/**/shared
+/**/can/**/config.json
+
+# Frontend build/package folders
+node_modules
+build
+
+# Byte-compiled / optimized / DLL files
+.idea/
+__pycache__/
+.mypy_cache/
+*.py[cod]
+
+# .env files
+/**/*.env
+/**/env.sh
+/**/*.env.sh
+
+# Certificates
+/**/*.pem
+/**/*.crt
+/**/*.key
+/**/*.srl
+/**/*.csr

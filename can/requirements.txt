@@ -1,0 +1,6 @@
+asyncio==3.4.3
+msgpack==1.0.5
+packaging==23.1
+python-can==4.2.2
+typing_extensions==4.6.3
+wrapt==1.15.0
