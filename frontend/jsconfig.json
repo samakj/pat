@@ -1,0 +1,14 @@
+{
+  "compilerOptions": {
+    "lib": ["ES2021.String"],
+    "target": "es2017",
+    "baseUrl": "./",
+    "paths": {
+      "client/*": ["client/*"],
+      "shared/*": ["shared/*"]
+    },
+    "moduleResolution": "node",
+    "jsx": "react"
+  },
+  "exclude": ["node_modules", "data"]
+}
