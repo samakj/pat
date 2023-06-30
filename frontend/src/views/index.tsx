@@ -37,8 +37,16 @@ export const Index: React.FunctionComponent = () => {
             <th>Data</th>
           </tr>
         </thead>
-        <tbody>
-          {Object.values(data || {})
+        <tbody style={{ font: 'monospace' }}>
+          {Object.values(
+            data || {
+              '-': {
+                arbitration_id: '--------',
+                timestamp: '------------------',
+                data: '----------------------------------------------------------------',
+              },
+            }
+          )
             ?.sort((messageA: CANDataType, messageB: CANDataType) => {
               if (messageA.arbitration_id < messageB.arbitration_id) return -1;
               if (messageA.arbitration_id > messageB.arbitration_id) return 1;
