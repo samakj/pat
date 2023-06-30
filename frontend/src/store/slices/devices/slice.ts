@@ -17,7 +17,8 @@ export const setCANData = (
   state.data = state.data || {};
   if (Array.isArray(action.payload))
     action.payload.forEach((device) => setCANData(state, { payload: device }));
-  else state.data[action.payload.arbitration_id] = action.payload;
+  else if (state.data[action.payload.arbitration_id].data !== action.payload.data)
+    state.data[action.payload.arbitration_id] = action.payload;
 };
 
 export const setStartTime = (
