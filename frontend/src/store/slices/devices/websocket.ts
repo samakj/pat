@@ -69,13 +69,14 @@ export class CANDataWebsocket {
 
       let index = 0;
       for (const message of this.windowedMessages || []) {
-        if (+new Date() - +new Date(message.timestamp) > MESSAGE_WINDOW_PERIOD) {
+        if (+new Date() - +new Date(message.timestamp) < MESSAGE_WINDOW_PERIOD) {
           break;
         }
         index += 1;
       }
 
       this.windowedMessages = [...(this.windowedMessages?.slice(index) || []), data];
+      this.buffer.push(data)
 
       this.onMessage?.(event, data, this.socket as WebSocket);
     };
