@@ -9,10 +9,10 @@
     "watch:client:dev": "NODE_ENV=development webpack --watch --config webpack.config.js --env target=client --env mode=development",
     "watch:server:dev": "NODE_ENV=development webpack --watch --config webpack.config.js --env target=server --env mode=development",
     "build:dev": "npm run build:client:dev && npm run build:server:dev",
-    "build:client:prod": "NODE_ENV=production webpack --config webpack.config.js --env target=client --env mode=production",
-    "build:server:prod": "NODE_ENV=production webpack --config webpack.config.js --env target=server --env mode=production",
+    "build:client:prod": "NODE_ENV=production webpack --config webpack.config.js --env target=client --env mode=production --env outputFolder=public",
+    "build:server:prod": "NODE_ENV=production webpack --config webpack.config.js --env target=server --env mode=production --env outputFolder=public",
     "build:prod": "npm run build:client:prod && npm run build:server:prod",
-    "start:server": "node build/server/main.js",
+    "start:server": "node public/server/main.js",
     "start:dev": "concurrently --names 'client,server,http  ' 'npm run watch:client:dev' 'npm run watch:server:dev' 'nodemon --watch build/server --exec \"npm run start:server\"'"
   },
   "author": "",
