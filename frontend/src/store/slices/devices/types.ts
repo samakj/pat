@@ -22,6 +22,13 @@ export interface UseCANDataWebsocketPropsType {
   onClose?: (event: CloseEvent, websocket: WebSocket | null) => void;
 }
 
+export interface CANDataWebsocketMessageType {
+  startTime?: Date;
+  lastMessage?: Date;
+  messageCount?: number;
+  windowedMessages?: CANDataType[];
+}
+
 export interface CANDataStateType {
   [deviceId: number]: CANDataType;
 }
