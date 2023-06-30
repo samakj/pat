@@ -50,8 +50,37 @@ export const setWindowedMessageCount = (
     state.websocket = { ...(state.websocket || {}), windowedMessageCount: action.payload };
 };
 
+export const setCANWebsocketData = (
+  state: CANSliceType,
+  action: Pick<
+    PayloadAction<{
+      startTime: string;
+      lastMessage: string;
+      messageCount: number;
+      windowedMessageCount: number;
+      data: CANDataType | CANDataType[];
+    }>,
+    'payload'
+  >
+) => {
+  if (action.payload) {
+    setCANData(state, { payload: action.payload.data });
+    setStartTime(state, { payload: action.payload.startTime });
+    setLastMessage(state, { payload: action.payload.lastMessage });
+    setMessageCount(state, { payload: action.payload.messageCount });
+    setWindowedMessageCount(state, { payload: action.payload.windowedMessageCount });
+  }
+};
+
 export const CANSlice = createSlice({
   name: 'can',
   initialState,
-  reducers: { setCANData, setStartTime, setLastMessage, setMessageCount, setWindowedMessageCount },
+  reducers: {
+    setCANData,
+    setStartTime,
+    setLastMessage,
+    setMessageCount,
+    setWindowedMessageCount,
+    setCANWebsocketData,
+  },
 });

@@ -76,7 +76,7 @@ export class CANDataWebsocket {
       }
 
       this.windowedMessages = [...(this.windowedMessages?.slice(index) || []), data];
-      this.buffer.push(data)
+      this.buffer.push(data);
 
       this.onMessage?.(event, data, this.socket as WebSocket);
     };
@@ -85,13 +85,15 @@ export class CANDataWebsocket {
   };
 
   clearBuffer = () => {
-    if (this.buffer.length) this.dispatch(CANSlice.actions.setCANData(this.buffer));
-    this.buffer = [];
-
-    this.dispatch(CANSlice.actions.setStartTime(this.startTime.toISOString()));
-    this.dispatch(CANSlice.actions.setLastMessage(this.lastMessage.toISOString()));
-    this.dispatch(CANSlice.actions.setMessageCount(this.messageCount));
-    this.dispatch(CANSlice.actions.setWindowedMessageCount(this.windowedMessages.length));
+    this.dispatch(
+      CANSlice.actions.setCANWebsocketData({
+        data: this.buffer,
+        startTime: this.startTime.toISOString(),
+        lastMessage: this.lastMessage.toISOString(),
+        messageCount: this.messageCount,
+        windowedMessageCount: this.windowedMessages.length,
+      })
+    );
   };
 
   disconnect = () => {
@@ -109,7 +111,7 @@ export const useCANDataWebsocket = (callbacks: Omit<CANDataWebsocketPropsType, '
 
   useEffect(() => {
     websocket.current = new CANDataWebsocket({
-      dispatch, 
+      dispatch,
       onOpen: callbacks.onOpen,
       onMessage: callbacks.onMessage,
       onError: callbacks.onError,
@@ -117,13 +119,7 @@ export const useCANDataWebsocket = (callbacks: Omit<CANDataWebsocketPropsType, '
     });
     websocket.current.connect();
     return () => websocket.current?.disconnect();
-  }, [
-    dispatch, 
-    callbacks.onOpen,
-    callbacks.onMessage,
-    callbacks.onError,
-    callbacks.onClose,
-  ]);
+  }, [dispatch, callbacks.onOpen, callbacks.onMessage, callbacks.onError, callbacks.onClose]);
 
   return { websocket };
 };
