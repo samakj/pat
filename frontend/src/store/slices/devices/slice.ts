@@ -25,8 +25,6 @@ export const CANSlice = createSlice({
   initialState,
   reducers: { setCANData },
   extraReducers: (builder: ActionReducerMapBuilder<CANSliceType>): void => {
-    // builder.addCase(CANDataMessageAction, (state, action) => {
-    //   setCANData(state, action);
-    // });
+    builder.addCase(CANDataMessageAction, setCANData);
   },
 });

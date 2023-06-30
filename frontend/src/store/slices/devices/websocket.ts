@@ -1,16 +1,19 @@
 /** @format */
 
 import { createAction } from '@reduxjs/toolkit';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import { useDispatch } from '../..';
 import { Url } from '../../../utils/url';
-import { CANDataType, CANDataWebsocketMessageType, UseCANDataWebsocketPropsType } from './types';
+import { CANDataType, CANDataWebsocketMetaType, UseCANDataWebsocketPropsType } from './types';
 
 export const MESSAGE_WINDOW_PERIOD = 1000;
+export const BUFFER_FLUSH_PERIOD = 100;
 
 export const DevicesWebsocketUrl = new Url(`/v0/can/ws`);
 
-export const CANDataMessageAction = createAction<CANDataType>('createDevice/recieved');
+export const CANDataMessageAction = createAction<CANDataType | CANDataType[]>(
+  'createDevice/received'
+);
 
 export const useCANDataWebsocket = ({
   onOpen,
@@ -20,7 +23,8 @@ export const useCANDataWebsocket = ({
 }: UseCANDataWebsocketPropsType) => {
   const dispatch = useDispatch();
   const websocket = useRef<WebSocket | null>(null);
-  const meta = useRef<CANDataWebsocketMessageType>({});
+  const meta = useRef<CANDataWebsocketMetaType>({});
+  const buffer = useRef<CANDataType[]>([]);
 
   useEffect(() => {
     websocket.current = new WebSocket(
@@ -57,12 +61,21 @@ export const useCANDataWebsocket = ({
         data,
       ];
 
-      // dispatch(CANDataMessageAction(data))
       onMessage?.(event, data, websocket.current);
     };
 
     return () => websocket.current?.close();
   }, [dispatch, onOpen, onMessage, onError, onClose]);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (buffer.current.length) dispatch(CANDataMessageAction(buffer.current));
+      buffer.current = [];
+    }, BUFFER_FLUSH_PERIOD);
+    return () => {
+      clearInterval(interval);
+    };
+  }, [dispatch]);
 
   return { websocket, meta: meta.current };
 };
