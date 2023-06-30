@@ -37,7 +37,7 @@ export const Index: React.FunctionComponent = () => {
             <th>Data</th>
           </tr>
         </thead>
-        <tbody style={{ font: 'monospace' }}>
+        <tbody style={{ fontFamily: 'monospace' }}>
           {Object.values(
             data || {
               '-': {
