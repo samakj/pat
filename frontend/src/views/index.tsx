@@ -1,6 +1,6 @@
 /** @format */
 
-import React from 'react';
+import React, { CSSProperties, useEffect, useRef, useState } from 'react';
 import { useCANDataWebsocket } from '../store/slices/devices/websocket';
 import { useSelector } from '../store';
 import { CANDataType } from '../store/slices/devices/types';
@@ -23,26 +23,56 @@ export const MessageRate: React.FunctionComponent = () => {
   );
   return <div>Message Count: {windowedMessageCount}/s</div>;
 };
-
 export const Timestamp: React.FunctionComponent<{
   arbitrationId: CANDataType['arbitration_id'];
 }> = ({ arbitrationId }) => {
   const timestamp = useSelector((state) => state.can.data?.[arbitrationId]?.timestamp);
-  return <td>{timestamp || '-'}</td>;
+  return <td>{timestamp ? new Date(timestamp).toISOString() : '-'}</td>;
 };
 export const ArbitrationId: React.FunctionComponent<{
   arbitrationId: CANDataType['arbitration_id'];
 }> = ({ arbitrationId }) => {
   return <td>{arbitrationId}</td>;
 };
+export const Bit: React.FunctionComponent<{
+  arbitrationId: CANDataType['arbitration_id'];
+  byteNo: number;
+  bitNo: number;
+}> = ({ arbitrationId, byteNo, bitNo }) => {
+  const prevBit = useRef<string>();
+  const bit = useSelector((state) => state.can.data?.[arbitrationId]?.data[8 * byteNo + bitNo]);
+  const [style, setStyle] = useState<CSSProperties>({});
+
+  useEffect(() => {
+    if (bit !== prevBit.current) {
+      prevBit.current = bit;
+      setStyle({ color: 'red', fontWeight: 'bold' });
+      const timeout = setTimeout(() => setStyle({}), 100);
+      return () => {
+        clearTimeout(timeout);
+      };
+    }
+  }, [bit, setStyle]);
+
+  if (!bit) return null;
+  return <span style={style}>{bit}</span>;
+};
 export const Byte: React.FunctionComponent<{
   arbitrationId: CANDataType['arbitration_id'];
   byteNo: number;
 }> = ({ arbitrationId, byteNo }) => {
-  const byte = useSelector((state) =>
-    state.can.data?.[arbitrationId]?.data.slice(byteNo * 8, (byteNo + 1) * 8)
+  return (
+    <td>
+      <Bit arbitrationId={arbitrationId} byteNo={byteNo} bitNo={0} />
+      <Bit arbitrationId={arbitrationId} byteNo={byteNo} bitNo={1} />
+      <Bit arbitrationId={arbitrationId} byteNo={byteNo} bitNo={2} />
+      <Bit arbitrationId={arbitrationId} byteNo={byteNo} bitNo={3} />
+      <Bit arbitrationId={arbitrationId} byteNo={byteNo} bitNo={4} />
+      <Bit arbitrationId={arbitrationId} byteNo={byteNo} bitNo={5} />
+      <Bit arbitrationId={arbitrationId} byteNo={byteNo} bitNo={6} />
+      <Bit arbitrationId={arbitrationId} byteNo={byteNo} bitNo={7} />
+    </td>
   );
-  return <td>{byte || '-'}</td>;
 };
 
 export const DataRow: React.FunctionComponent<{ arbitrationId: CANDataType['arbitration_id'] }> = ({
