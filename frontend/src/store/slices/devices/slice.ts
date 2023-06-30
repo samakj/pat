@@ -1,8 +1,7 @@
 /** @format */
 
-import { ActionReducerMapBuilder, createSlice, PayloadAction } from '@reduxjs/toolkit';
+import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 
-import { CANDataMessageAction } from './websocket';
 import { CANDataType, CANSliceType } from './types';
 
 export const initialState: CANSliceType = {
@@ -24,7 +23,4 @@ export const CANSlice = createSlice({
   name: 'can',
   initialState,
   reducers: { setCANData },
-  extraReducers: (builder: ActionReducerMapBuilder<CANSliceType>): void => {
-    builder.addCase(CANDataMessageAction, setCANData);
-  },
 });

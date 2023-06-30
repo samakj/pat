@@ -5,15 +5,12 @@ import { useEffect, useRef } from 'react';
 import { useDispatch } from '../..';
 import { Url } from '../../../utils/url';
 import { CANDataType, CANDataWebsocketMetaType, UseCANDataWebsocketPropsType } from './types';
+import { CANSlice } from './slice';
 
 export const MESSAGE_WINDOW_PERIOD = 1000;
 export const BUFFER_FLUSH_PERIOD = 100;
 
 export const DevicesWebsocketUrl = new Url(`/v0/can/ws`);
-
-export const CANDataMessageAction = createAction<CANDataType | CANDataType[]>(
-  'createDevice/received'
-);
 
 export const useCANDataWebsocket = ({
   onOpen,
@@ -69,8 +66,10 @@ export const useCANDataWebsocket = ({
 
   useEffect(() => {
     const interval = setInterval(() => {
-      if (buffer.current.length) dispatch(CANDataMessageAction(buffer.current));
-      buffer.current = [];
+      if (buffer.current.length) {
+        dispatch(CANSlice.actions.setCANData(buffer.current));
+        buffer.current = [];
+      }
     }, BUFFER_FLUSH_PERIOD);
     return () => {
       clearInterval(interval);
