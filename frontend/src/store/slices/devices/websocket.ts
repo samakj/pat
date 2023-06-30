@@ -107,10 +107,22 @@ export const useCANDataWebsocket = (callbacks: Omit<CANDataWebsocketPropsType, '
   const websocket = useRef<CANDataWebsocket>();
 
   useEffect(() => {
-    websocket.current = new CANDataWebsocket({ dispatch, ...callbacks });
+    websocket.current = new CANDataWebsocket({
+      dispatch, 
+      onOpen: callbacks.onOpen,
+      onMessage: callbacks.onMessage,
+      onError: callbacks.onError,
+      onClose: callbacks.onClose,
+    });
     websocket.current.connect();
     return () => websocket.current?.disconnect();
-  }, [dispatch, callbacks]);
+  }, [
+    dispatch, 
+    callbacks.onOpen,
+    callbacks.onMessage,
+    callbacks.onError,
+    callbacks.onClose,
+  ]);
 
   return { websocket };
 };
