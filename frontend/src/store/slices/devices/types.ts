@@ -1,5 +1,7 @@
 /** @format */
 
+import { Dispatch } from '../..';
+
 export interface CANDataType {
   timestamp: number;
   data: string;
@@ -15,7 +17,8 @@ export interface CANDataType {
   error_state_indicator: boolean;
 }
 
-export interface UseCANDataWebsocketPropsType {
+export interface CANDataWebsocketPropsType {
+  dispatch: Dispatch;
   onOpen?: (event: Event, websocket: WebSocket | null) => void;
   onMessage?: (event: MessageEvent<string>, data: CANDataType, websocket: WebSocket | null) => void;
   onError?: (event: Event, websocket: WebSocket | null) => void;
@@ -36,4 +39,10 @@ export interface CANDataStateType {
 export interface CANSliceType {
   requests: {};
   data?: CANDataStateType;
+  websocket?: {
+    startTime?: string;
+    lastMessage?: string;
+    messageCount?: number;
+    windowedMessageCount?: number;
+  };
 }
