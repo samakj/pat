@@ -1,10 +1,10 @@
 /** @format */
 
-import React, { CSSProperties, useEffect, useRef, useState } from 'react';
+import React, { CSSProperties, useEffect, useMemo, useRef, useState } from 'react';
 import { useCANDataWebsocket } from '../store/slices/devices/websocket';
 import { useSelector } from '../store';
 import { CANDataType } from '../store/slices/devices/types';
-import { dataMap } from './config';
+import { dataMap, ignoredData } from './config';
 
 export const StartTime: React.FunctionComponent = () => {
   const startTime = useSelector((state) => state.can.websocket?.startTime);
@@ -43,11 +43,19 @@ export const Timestamp: React.FunctionComponent<{
 };
 export const Bit: React.FunctionComponent<{
   arbitrationId: CANDataType['arbitration_id'];
-  byteNo: number;
   bitNo: number;
-}> = ({ arbitrationId, byteNo, bitNo }) => {
+  checkIgnored?: boolean;
+}> = ({ arbitrationId, bitNo, checkIgnored }) => {
   const prevBit = useRef<string>();
-  const bit = useSelector((state) => state.can.data?.[arbitrationId]?.data[8 * byteNo + bitNo]);
+  const isIgnored = useMemo(
+    () =>
+      !checkIgnored &&
+      ignoredData[arbitrationId]?.find(({ minBit, maxBit }) => bitNo >= minBit && bitNo < maxBit),
+    [checkIgnored, bitNo]
+  );
+  const bit = useSelector((state) =>
+    isIgnored ? '-' : state.can.data?.[arbitrationId]?.data[bitNo]
+  );
   const [style, setStyle] = useState<CSSProperties>({});
 
   useEffect(() => {
@@ -69,14 +77,14 @@ export const Byte: React.FunctionComponent<{
   byteNo: number;
 }> = ({ arbitrationId, byteNo }) => (
   <td>
-    <Bit arbitrationId={arbitrationId} byteNo={byteNo} bitNo={0} />
-    <Bit arbitrationId={arbitrationId} byteNo={byteNo} bitNo={1} />
-    <Bit arbitrationId={arbitrationId} byteNo={byteNo} bitNo={2} />
-    <Bit arbitrationId={arbitrationId} byteNo={byteNo} bitNo={3} />
-    <Bit arbitrationId={arbitrationId} byteNo={byteNo} bitNo={4} />
-    <Bit arbitrationId={arbitrationId} byteNo={byteNo} bitNo={5} />
-    <Bit arbitrationId={arbitrationId} byteNo={byteNo} bitNo={6} />
-    <Bit arbitrationId={arbitrationId} byteNo={byteNo} bitNo={7} />
+    <Bit arbitrationId={arbitrationId} bitNo={8 * byteNo + 0} checkIgnored />
+    <Bit arbitrationId={arbitrationId} bitNo={8 * byteNo + 1} checkIgnored />
+    <Bit arbitrationId={arbitrationId} bitNo={8 * byteNo + 2} checkIgnored />
+    <Bit arbitrationId={arbitrationId} bitNo={8 * byteNo + 3} checkIgnored />
+    <Bit arbitrationId={arbitrationId} bitNo={8 * byteNo + 4} checkIgnored />
+    <Bit arbitrationId={arbitrationId} bitNo={8 * byteNo + 5} checkIgnored />
+    <Bit arbitrationId={arbitrationId} bitNo={8 * byteNo + 6} checkIgnored />
+    <Bit arbitrationId={arbitrationId} bitNo={8 * byteNo + 7} checkIgnored />
   </td>
 );
 
@@ -109,12 +117,7 @@ export const MappedDataRow: React.FunctionComponent<{
       {Array(maxBit - minBit)
         .fill(null)
         .map((_, index) => (
-          <Bit
-            key={index}
-            arbitrationId={arbitrationId}
-            byteNo={Math.floor((index + minBit) / 8)}
-            bitNo={(index + minBit) % 8}
-          />
+          <Bit key={index} arbitrationId={arbitrationId} bitNo={index + minBit} />
         ))}
     </td>
   </tr>
