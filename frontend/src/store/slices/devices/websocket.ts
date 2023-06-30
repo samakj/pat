@@ -67,6 +67,9 @@ export class CANDataWebsocket {
 
       const data = JSON.parse(event.data);
 
+      // Floats are converted to string for json safety on backend
+      data.timestamp = parseFloat(data.timestamp);
+
       let index = 0;
       for (const message of this.windowedMessages || []) {
         if (+new Date() - +new Date(message.timestamp) < MESSAGE_WINDOW_PERIOD) {
