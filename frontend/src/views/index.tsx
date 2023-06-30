@@ -62,7 +62,7 @@ export const Bit: React.FunctionComponent<{
     if (bit !== prevBit.current) {
       prevBit.current = bit;
       setStyle({ color: 'red', fontWeight: 'bold' });
-      const timeout = setTimeout(() => setStyle({}), 100);
+      const timeout = setTimeout(() => setStyle({}), 500);
       return () => {
         clearTimeout(timeout);
       };
