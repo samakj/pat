@@ -7,6 +7,7 @@ import React from 'react';
 import { renderToString } from 'react-dom/server';
 import { ServerStyleSheet } from 'styled-components';
 import { App } from './App';
+import { networkInterfaces } from 'os';
 
 const PORT = 8085;
 const BUILD_DIR = path.resolve(__dirname, '..');
@@ -28,6 +29,11 @@ server.use('*', (request, response) => {
   response.status(200);
   return response.send(html);
 });
+
+const networks = networkInterfaces();
+
 server.listen(PORT, '0.0.0.0', () =>
-  console.log(`Express server started at http://localhost:${PORT}`)
+  console.log(
+    `Express server started at http://${networks?.wlan0?.[0]?.address || '0.0.0.0'}:${PORT}`
+  )
 );
