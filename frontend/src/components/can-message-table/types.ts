@@ -18,3 +18,8 @@ export interface ArbitrationIdCellPropsType {
 export interface DataRowPropsType {
   arbitrationId: CANMessageType['arbitration_id'];
 }
+
+export interface CANMessageTablePropsType {
+  whitelist?: Set<CANMessageType['arbitration_id']>;
+  blacklist?: Set<CANMessageType['arbitration_id']>;
+}
