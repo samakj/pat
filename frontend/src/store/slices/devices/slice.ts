@@ -2,7 +2,8 @@
 
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 
-import { CANMessagesStateType, CANMessageType, CANSliceType } from './types';
+import { CANMessagesStateType, CANMessageType, CANSliceType, MappingType } from './types';
+import { getMappings } from './thunks';
 
 export const initialState: CANSliceType = {
   requests: {},
@@ -76,6 +77,18 @@ export const setCANWebsocketData = (
   }
 };
 
+export const setMappings = (
+  state: CANSliceType,
+  action: Pick<PayloadAction<MappingType[]>, 'payload'>
+) => {
+  if (action.payload) {
+    action.payload.forEach((mapping) => {
+      state.mappings = state.mappings || {};
+      state.mappings[mapping.name] = mapping;
+    });
+  }
+};
+
 export const CANSlice = createSlice({
   name: 'can',
   initialState,
@@ -86,5 +99,8 @@ export const CANSlice = createSlice({
     setMessageCount,
     setWindowedMessageCount,
     setCANWebsocketData,
+  },
+  extraReducers: (builder) => {
+    builder.addCase(getMappings.fulfilled, setMappings);
   },
 });

@@ -17,6 +17,12 @@ export interface CANMessageType {
   error_state_indicator: boolean;
 }
 
+export interface MappingType {
+  name: string;
+  arbitration_id: number;
+  bits: [from: number, to: number];
+}
+
 export interface CANWebsocketPropsType {
   dispatch: Dispatch;
   onOpen?: (event: Event, websocket: WebSocket | null) => void;
@@ -36,13 +42,18 @@ export interface CANWebsocketMetaType {
   windowedMessages?: CANMessageType[];
 }
 
-export interface CANMessagesStateType {
-  [deviceId: number]: CANMessageType;
-}
+export type CANMessagesStateType = {
+  [arbitrationId: CANMessageType['arbitration_id']]: CANMessageType;
+};
+
+export type MappingsStateType = {
+  [name: MappingType['name']]: MappingType;
+};
 
 export interface CANSliceType {
   requests: {};
   messages?: CANMessagesStateType;
+  mappings?: MappingsStateType;
   websocket?: {
     startTime?: string;
     lastMessage?: string;

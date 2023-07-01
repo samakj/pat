@@ -1,15 +1,23 @@
 /** @format */
 
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useCANDataWebsocket } from '../store/slices/devices/websocket';
 import { CANMessageTable } from '../components/can-message-table';
 import { ParsedDataTable } from '../components/parsed-data-table';
 import { CANWebsocketMeta } from '../components/can-websocket-meta';
+import { useDispatch } from '../store';
+import { getMappings } from '../store/slices/devices/thunks';
 
 export const Index: React.FunctionComponent = () => {
   useCANDataWebsocket({});
+  const dispatch = useDispatch();
+
   const [whitelistInputValue, setWhitelistInputValue] = useState('');
   const [blacklistInputValue, setBlacklistInputValue] = useState('');
+
+  useEffect(() => {
+    dispatch(getMappings());
+  }, [dispatch]);
 
   const toIntListString = useCallback(
     (str: string) => str.replace(/[^\d,\s]/g, '').replace(/[\s]/g, ' '),
