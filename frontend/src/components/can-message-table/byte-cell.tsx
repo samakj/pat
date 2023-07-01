@@ -4,7 +4,7 @@ import React from 'react';
 import { ByteCellPropsType } from './types';
 import { Bit } from '../can-maessage-bit';
 
-export const Byte: React.FunctionComponent<ByteCellPropsType> = ({ arbitrationId, byteNo }) => (
+export const ByteCell: React.FunctionComponent<ByteCellPropsType> = ({ arbitrationId, byteNo }) => (
   <td>
     <Bit arbitrationId={arbitrationId} bitNo={8 * byteNo + 0} checkIgnored />
     <Bit arbitrationId={arbitrationId} bitNo={8 * byteNo + 1} checkIgnored />
