@@ -6,7 +6,7 @@ from speedyapi.websockets import Websockets
 
 CAN_V0_ROUTER = APIRouter(prefix="/v0/can", tags=["can"])
 
-mappings = [DataMapping(name="test", arbitration_id=0, bits=(1, 2))]
+mappings = [DataMapping(name="test", arbitration_id=0, bits=(1, 2), format="binary")]
 
 
 @CAN_V0_ROUTER.get("/mappings", response_model=list[DataMapping])
