@@ -21,6 +21,7 @@ export interface MappingType {
   name: string;
   arbitration_id: number;
   bits: [from: number, to: number];
+  format: 'binary' | 'hex' | 'int';
 }
 
 export interface CANWebsocketPropsType {
