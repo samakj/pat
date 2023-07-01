@@ -2,23 +2,26 @@
 
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 
-import { CANDataType, CANSliceType } from './types';
+import { CANMessagesStateType, CANMessageType, CANSliceType } from './types';
 
 export const initialState: CANSliceType = {
   requests: {},
-  data: undefined,
+  messages: undefined,
   websocket: undefined,
 };
 
-export const setCANData = (
+export const setCANMessages = (
   state: CANSliceType,
-  action: Pick<PayloadAction<CANDataType | CANDataType[]>, 'payload'>
+  action: Pick<PayloadAction<CANMessagesStateType>, 'payload'>
 ) => {
-  state.data = state.data || {};
-  if (Array.isArray(action.payload))
-    action.payload.forEach((device) => setCANData(state, { payload: device }));
-  else if (state.data[action.payload.arbitration_id].data !== action.payload.data)
-    state.data[action.payload.arbitration_id] = action.payload;
+  if (action.payload) {
+    state.messages = state.messages || {};
+    Object.values(action.payload).forEach((message) => {
+      if (state.messages && state.messages[message.arbitration_id]?.data !== message.data) {
+        state.messages[message.arbitration_id] = message;
+      }
+    });
+  }
 };
 
 export const setStartTime = (
@@ -59,13 +62,13 @@ export const setCANWebsocketData = (
       lastMessage: string;
       messageCount: number;
       windowedMessageCount: number;
-      data: CANDataType | CANDataType[];
+      messages: CANMessagesStateType;
     }>,
     'payload'
   >
 ) => {
   if (action.payload) {
-    setCANData(state, { payload: action.payload.data });
+    setCANMessages(state, { payload: action.payload.messages });
     setStartTime(state, { payload: action.payload.startTime });
     setLastMessage(state, { payload: action.payload.lastMessage });
     setMessageCount(state, { payload: action.payload.messageCount });
@@ -77,7 +80,7 @@ export const CANSlice = createSlice({
   name: 'can',
   initialState,
   reducers: {
-    setCANData,
+    setCANMessages,
     setStartTime,
     setLastMessage,
     setMessageCount,

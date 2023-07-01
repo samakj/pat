@@ -2,7 +2,7 @@
 
 import { Dispatch } from '../..';
 
-export interface CANDataType {
+export interface CANMessageType {
   timestamp: number;
   data: string;
   arbitration_id: number;
@@ -17,28 +17,32 @@ export interface CANDataType {
   error_state_indicator: boolean;
 }
 
-export interface CANDataWebsocketPropsType {
+export interface CANWebsocketPropsType {
   dispatch: Dispatch;
   onOpen?: (event: Event, websocket: WebSocket | null) => void;
-  onMessage?: (event: MessageEvent<string>, data: CANDataType, websocket: WebSocket | null) => void;
+  onMessage?: (
+    event: MessageEvent<string>,
+    data: CANMessageType,
+    websocket: WebSocket | null
+  ) => void;
   onError?: (event: Event, websocket: WebSocket | null) => void;
   onClose?: (event: CloseEvent, websocket: WebSocket | null) => void;
 }
 
-export interface CANDataWebsocketMetaType {
+export interface CANWebsocketMetaType {
   startTime?: Date;
   lastMessage?: Date;
   messageCount?: number;
-  windowedMessages?: CANDataType[];
+  windowedMessages?: CANMessageType[];
 }
 
-export interface CANDataStateType {
-  [deviceId: number]: CANDataType;
+export interface CANMessagesStateType {
+  [deviceId: number]: CANMessageType;
 }
 
 export interface CANSliceType {
   requests: {};
-  data?: CANDataStateType;
+  messages?: CANMessagesStateType;
   websocket?: {
     startTime?: string;
     lastMessage?: string;

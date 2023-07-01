@@ -3,7 +3,7 @@
 import { useEffect, useRef } from 'react';
 import { Dispatch, useDispatch } from '../..';
 import { Url } from '../../../utils/url';
-import { CANDataType, CANDataWebsocketPropsType } from './types';
+import { CANMessageType, CANWebsocketPropsType, CANMessagesStateType } from './types';
 import { CANSlice } from './slice';
 
 export const MESSAGE_WINDOW_PERIOD = 1000;
@@ -18,17 +18,21 @@ export class CANDataWebsocket {
   startTime: Date;
   lastMessage: Date;
   messageCount: number;
-  windowedMessages: CANDataType[];
+  windowedMessages: CANMessageType[];
 
   onOpen?: (event: Event, websocket: WebSocket | null) => void;
-  onMessage?: (event: MessageEvent<string>, data: CANDataType, websocket: WebSocket | null) => void;
+  onMessage?: (
+    event: MessageEvent<string>,
+    data: CANMessageType,
+    websocket: WebSocket | null
+  ) => void;
   onError?: (event: Event, websocket: WebSocket | null) => void;
   onClose?: (event: CloseEvent, websocket: WebSocket | null) => void;
 
-  buffer: CANDataType[];
+  buffer: CANMessagesStateType;
   bufferClearInterval?: ReturnType<typeof setInterval>;
 
-  constructor(options: CANDataWebsocketPropsType) {
+  constructor(options: CANWebsocketPropsType) {
     this.startTime = new Date();
     this.lastMessage = new Date();
     this.messageCount = 0;
@@ -40,7 +44,7 @@ export class CANDataWebsocket {
     this.onError = options.onError;
     this.onClose = options.onClose;
 
-    this.buffer = [];
+    this.buffer = {};
   }
 
   connect = () => {
@@ -65,10 +69,10 @@ export class CANDataWebsocket {
       this.messageCount = (this.messageCount || 0) + 1;
       this.lastMessage = now;
 
-      const data = JSON.parse(event.data);
+      const message = JSON.parse(event.data);
 
       // Floats are converted to string for json safety on backend
-      data.timestamp = parseFloat(data.timestamp);
+      message.timestamp = parseFloat(message.timestamp);
 
       let index = 0;
       for (const message of this.windowedMessages || []) {
@@ -78,10 +82,10 @@ export class CANDataWebsocket {
         index += 1;
       }
 
-      this.windowedMessages = [...(this.windowedMessages?.slice(index) || []), data];
-      this.buffer.push(data);
+      this.windowedMessages = [...(this.windowedMessages?.slice(index) || []), message];
+      this.buffer[message] = message;
 
-      this.onMessage?.(event, data, this.socket as WebSocket);
+      this.onMessage?.(event, message, this.socket as WebSocket);
     };
 
     this.bufferClearInterval = setInterval(this.clearBuffer, BUFFER_FLUSH_PERIOD);
@@ -90,13 +94,14 @@ export class CANDataWebsocket {
   clearBuffer = () => {
     this.dispatch(
       CANSlice.actions.setCANWebsocketData({
-        data: this.buffer,
+        messages: this.buffer,
         startTime: this.startTime.toISOString(),
         lastMessage: this.lastMessage.toISOString(),
         messageCount: this.messageCount,
         windowedMessageCount: this.windowedMessages.length,
       })
     );
+    this.buffer = {};
   };
 
   disconnect = () => {
@@ -108,7 +113,7 @@ export class CANDataWebsocket {
   };
 }
 
-export const useCANDataWebsocket = (callbacks: Omit<CANDataWebsocketPropsType, 'dispatch'>) => {
+export const useCANDataWebsocket = (callbacks: Omit<CANWebsocketPropsType, 'dispatch'>) => {
   const dispatch = useDispatch();
   const websocket = useRef<CANDataWebsocket>();
 

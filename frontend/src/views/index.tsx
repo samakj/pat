@@ -3,7 +3,7 @@
 import React, { CSSProperties, useEffect, useMemo, useRef, useState } from 'react';
 import { useCANDataWebsocket } from '../store/slices/devices/websocket';
 import { useSelector } from '../store';
-import { CANDataType } from '../store/slices/devices/types';
+import { CANMessageType } from '../store/slices/devices/types';
 import { dataMap, ignoredData } from './config';
 
 export const StartTime: React.FunctionComponent = () => {
@@ -31,18 +31,18 @@ export const Name: React.FunctionComponent<{
   return <td>{name}</td>;
 };
 export const ArbitrationId: React.FunctionComponent<{
-  arbitrationId: CANDataType['arbitration_id'];
+  arbitrationId: CANMessageType['arbitration_id'];
 }> = ({ arbitrationId }) => {
   return <td>{arbitrationId}</td>;
 };
 export const Timestamp: React.FunctionComponent<{
-  arbitrationId: CANDataType['arbitration_id'];
+  arbitrationId: CANMessageType['arbitration_id'];
 }> = ({ arbitrationId }) => {
-  const timestamp = useSelector((state) => state.can.data?.[arbitrationId]?.timestamp);
+  const timestamp = useSelector((state) => state.can.messages?.[arbitrationId]?.timestamp);
   return <td>{timestamp ? new Date(timestamp).toISOString() : '-'}</td>;
 };
 export const Bit: React.FunctionComponent<{
-  arbitrationId: CANDataType['arbitration_id'];
+  arbitrationId: CANMessageType['arbitration_id'];
   bitNo: number;
   checkIgnored?: boolean;
 }> = ({ arbitrationId, bitNo, checkIgnored }) => {
@@ -54,7 +54,7 @@ export const Bit: React.FunctionComponent<{
     [checkIgnored, bitNo]
   );
   const bit = useSelector((state) =>
-    isIgnored ? '-' : state.can.data?.[arbitrationId]?.data[bitNo]
+    isIgnored ? '-' : state.can.messages?.[arbitrationId]?.data[bitNo]
   );
   const [style, setStyle] = useState<CSSProperties>({});
 
@@ -73,7 +73,7 @@ export const Bit: React.FunctionComponent<{
   return <span style={style}>{bit}</span>;
 };
 export const Byte: React.FunctionComponent<{
-  arbitrationId: CANDataType['arbitration_id'];
+  arbitrationId: CANMessageType['arbitration_id'];
   byteNo: number;
 }> = ({ arbitrationId, byteNo }) => (
   <td>
@@ -88,9 +88,9 @@ export const Byte: React.FunctionComponent<{
   </td>
 );
 
-export const DataRow: React.FunctionComponent<{ arbitrationId: CANDataType['arbitration_id'] }> = ({
-  arbitrationId,
-}) => (
+export const DataRow: React.FunctionComponent<{
+  arbitrationId: CANMessageType['arbitration_id'];
+}> = ({ arbitrationId }) => (
   <tr>
     <ArbitrationId arbitrationId={arbitrationId} />
     <Timestamp arbitrationId={arbitrationId} />
@@ -107,7 +107,7 @@ export const DataRow: React.FunctionComponent<{ arbitrationId: CANDataType['arbi
 
 export const MappedDataRow: React.FunctionComponent<{
   name: string;
-  arbitrationId: CANDataType['arbitration_id'];
+  arbitrationId: CANMessageType['arbitration_id'];
   minBit: number;
   maxBit: number;
 }> = ({ name, arbitrationId, minBit, maxBit }) => (
@@ -126,14 +126,14 @@ export const MappedDataRow: React.FunctionComponent<{
 export const Index: React.FunctionComponent = () => {
   useCANDataWebsocket({});
   const arbitrationIds = useSelector(
-    (state): CANDataType['arbitration_id'][] =>
-      Object.values(state.can.data || {})
-        .sort((messageA: CANDataType, messageB: CANDataType) => {
+    (state): CANMessageType['arbitration_id'][] =>
+      Object.values(state.can.messages || {})
+        .sort((messageA: CANMessageType, messageB: CANMessageType) => {
           if (messageA.arbitration_id < messageB.arbitration_id) return -1;
           if (messageA.arbitration_id > messageB.arbitration_id) return 1;
           return 0;
         })
-        .map((message: CANDataType) => message.arbitration_id),
+        .map((message: CANMessageType) => message.arbitration_id),
     (before, after) => {
       if (before.length != after.length) return false;
       for (const index in before) {
@@ -173,7 +173,7 @@ export const Index: React.FunctionComponent = () => {
           </tr>
         </thead>
         <tbody style={{ fontFamily: 'monospace' }}>
-          {arbitrationIds.map((arbitrationId: CANDataType['arbitration_id']) => (
+          {arbitrationIds.map((arbitrationId: CANMessageType['arbitration_id']) => (
             <DataRow arbitrationId={arbitrationId} key={arbitrationId} />
           ))}
         </tbody>
