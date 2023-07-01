@@ -5,14 +5,9 @@ import { ParsedDataRowPropsType } from './types';
 import { NameCell } from './name-cell';
 import { BitRangeCell } from './bit-range-cell';
 
-export const ParsedDataRow: React.FunctionComponent<ParsedDataRowPropsType> = ({
-  name,
-  arbitrationId,
-  minBit,
-  maxBit,
-}) => (
+export const ParsedDataRow: React.FunctionComponent<ParsedDataRowPropsType> = ({ name }) => (
   <tr>
     <NameCell name={name} />
-    <BitRangeCell arbitrationId={arbitrationId} minBit={minBit} maxBit={maxBit} />
+    <BitRangeCell name={name} />
   </tr>
 );

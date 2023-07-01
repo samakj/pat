@@ -1,19 +1,12 @@
 /** @format */
 
-import React, { CSSProperties, useEffect, useMemo, useRef, useState } from 'react';
+import React, { CSSProperties, useEffect, useRef, useState } from 'react';
 import { BitPropsType } from './types';
 import { useSelector } from '../../store';
 
-export const Bit: React.FunctionComponent<BitPropsType> = ({
-  arbitrationId,
-  bitNo,
-  checkIgnored,
-}) => {
+export const Bit: React.FunctionComponent<BitPropsType> = ({ arbitrationId, bitNo }) => {
   const prevBit = useRef<string>();
-  const isIgnored = useMemo(() => false, [checkIgnored, bitNo]);
-  const bit = useSelector((state) =>
-    isIgnored ? '-' : state.can.messages?.[arbitrationId]?.data[bitNo]
-  );
+  const bit = useSelector((state) => state.can.messages?.[arbitrationId]?.data[bitNo]);
   const [style, setStyle] = useState<CSSProperties>({});
 
   useEffect(() => {

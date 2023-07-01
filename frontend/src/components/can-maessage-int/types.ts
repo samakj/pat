@@ -2,7 +2,7 @@
 
 import { CANMessageType } from '../../store/slices/devices/types';
 
-export interface BitPropsType {
+export interface IntPropsType {
   arbitrationId: CANMessageType['arbitration_id'];
-  bitNo: number;
+  bits: [from: number, to: number];
 }
