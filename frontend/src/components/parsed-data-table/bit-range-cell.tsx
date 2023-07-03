@@ -14,9 +14,9 @@ export const BitRangeCell: React.FunctionComponent<BitRangeCellPropsType> = ({ n
 
   return (
     <td>
-      {!bits ? (
+      {bits == undefined ? (
         '-'
-      ) : !arbitrationId ? (
+      ) : arbitrationId == undefined ? (
         '-'.repeat(bits[1] - bits[0])
       ) : format === 'hex' ? (
         <Hex arbitrationId={arbitrationId} bits={bits} />
