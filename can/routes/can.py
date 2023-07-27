@@ -1,6 +1,6 @@
 from fastapi import Depends, WebSocket
 
-from sniffer import mappings
+from sniffer.mappings import mappings
 from models.mapping import DataMapping
 from speedyapi import APIRouter
 from speedyapi.websockets import Websockets
