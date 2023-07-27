@@ -1,4 +1,4 @@
-from typing import Literal, Union
+from typing import Any, Callable
 from pydantic import BaseModel
 
 
@@ -6,4 +6,4 @@ class DataMapping(BaseModel):
     name: str
     arbitration_id: int
     bits: tuple[int, int]
-    format: Union[Literal["binary"], Literal["hex"], Literal["int"]]
+    format: Callable[[str], Any]

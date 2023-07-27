@@ -1,6 +1,9 @@
 import asyncio
-from typing import Optional
+from typing import Optional, Any
 import can
+from models.mapping import DataMapping
+from sniffer.mappings import mappings
+from sniffer.formatters import bytearray_to_bit_string
 from speedyapi.websockets import WebsocketsStore
 from speedyapi.json import serialise_json
 from speedyapi import Logger
@@ -26,9 +29,34 @@ class CANSniffer:
         self.bus = None
         self.reader = None
         self.notifier = None
+        self.mappings_state = {}
 
-    def get_bit_string(self, _bytes: bytearray, separator: str = "") -> str:
-        return separator.join([format(byte, "08b") for byte in _bytes])
+    def build_can_socket_message(self, message: can.Message) -> dict[str, Any]:
+        return {
+            "timestamp": message.timestamp * 1000,
+            "bits": bytearray_to_bit_string(message.data),
+            "bytes": [byte for byte in bytes],
+            "hex": [format(byte, "02x") for byte in bytes],
+            "arbitration_id": message.arbitration_id,
+            "is_extended_id": message.is_extended_id,
+            "is_remote_frame": message.is_remote_frame,
+            "is_error_frame": message.is_error_frame,
+            "channel": message.channel,
+            "dlc": message.dlc,
+            "is_fd": message.is_fd,
+            "is_rx": message.is_rx,
+            "bitrate_switch": message.bitrate_switch,
+            "error_state_indicator": message.error_state_indicator,
+        }
+
+    def build_data_socket_message(
+        self, message: can.Message, mapping: DataMapping
+    ) -> dict[str, Any]:
+        return {
+            "timestamp": message.timestamp * 1000,
+            "name": mapping.name,
+            "value": mapping.format(message.data[mapping.bits[0] : mapping.bits[1]]),
+        }
 
     async def _run(self) -> None:
         try:
@@ -45,24 +73,21 @@ class CANSniffer:
                     while True:
                         message = await self.reader.get_message()
 
-                        json = {
-                            "timestamp": message.timestamp * 1000,
-                            "data": self.get_bit_string(message.data),
-                            "arbitration_id": message.arbitration_id,
-                            "is_extended_id": message.is_extended_id,
-                            "is_remote_frame": message.is_remote_frame,
-                            "is_error_frame": message.is_error_frame,
-                            "channel": message.channel,
-                            "dlc": message.dlc,
-                            "is_fd": message.is_fd,
-                            "is_rx": message.is_rx,
-                            "bitrate_switch": message.bitrate_switch,
-                            "error_state_indicator": message.error_state_indicator,
-                        }
-
                         await self.websockets.broadcast_to_scope(
-                            scope="can", message=serialise_json(json)
+                            scope="can",
+                            message=serialise_json(
+                                self.build_can_socket_message(message)
+                            ),
                         )
+
+                        if mappings.get(message.arbitration_id) is not None:
+                            for mapping in mappings[message.arbitration_id]:
+                                await self.websockets.broadcast_to_scope(
+                                    scope="data",
+                                    message=serialise_json(
+                                        self.build_data_socket_message(message, mapping)
+                                    ),
+                                )
 
                 except Exception as error:
                     self.logger.info([self.notifier, self.reader, self.bus])

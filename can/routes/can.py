@@ -8,8 +8,8 @@ from speedyapi.websockets import Websockets
 CAN_V0_ROUTER = APIRouter(prefix="/v0/can", tags=["can"])
 
 
-@CAN_V0_ROUTER.get("/mappings", response_model=list[DataMapping])
-async def list_mappings() -> list[DataMapping]:
+@CAN_V0_ROUTER.get("/mappings", response_model=dict[int, DataMapping])
+async def list_mappings() -> dict[int, DataMapping]:
     return mappings
 
 
