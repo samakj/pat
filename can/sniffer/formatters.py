@@ -25,7 +25,7 @@ def first_byte_to_percentage(bytes: bytearray) -> float:
     return bytearray_to_int(bytes[0:1]) / 2.55
 
 
-def offset_first_byte_to_int(offset: int) -> Callable[[bytearray], int]:
+def offset_first_byte_to_int(offset: int) -> Callable[[bytearray], float]:
     def fn(bytes: bytearray) -> float:
         return bytearray_to_int(bytes[0:1]) + offset
 

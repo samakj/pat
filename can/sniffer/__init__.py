@@ -299,7 +299,6 @@ class CANSniffer:
                         )
                     elif mapping.pid in support_pids:
                         self.logger.info(f"Received {mapping.name}:")
-                        self.logger.info(serialise_json(mapping.format(message.data[3:7]), indent=4))
                         self.update_supported_pids(message)
                     else:
                         self.logger.info(
@@ -318,6 +317,7 @@ class CANSniffer:
             i = 0
             while True:
                 if self.last_sent_obd2_pid == self.last_seen_obd2_pid:
+                    self.logger.info(self.supported_pids)
                     if self.supported_pids.get(0x01) is None:
                         self.logger.info(
                             f"Requesting {obd2_mappings[OBD2_PIDS.SUPPORTED_PIDS_01_0F.value].name}"
