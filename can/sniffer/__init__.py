@@ -289,7 +289,7 @@ class CANSniffer:
                         f"Received CAN-{message.arbitration_id}: "
                         + f"{' ,'.join([mapping.name for mapping in mappings])}"
                     )
-                if message.arbitration_id == OBD2_RESPONSE.value:
+                if message.arbitration_id == OBD2_RESPONSE:
                     self.last_seen_obd2_pid = message.data[2]
                     mapping = obd2_mappings.get(message.data[2])
 
