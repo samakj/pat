@@ -102,13 +102,13 @@ class CANSniffer:
         for mapping in can_mappings.get(message.arbitration_id, []):
             await self.websockets.broadcast_to_scope(
                 scope="data",
-                message={
+                message=serialise_json({
                     "timestamp": message.timestamp * 1000,
                     "name": mapping.name,
                     "value": mapping.format(
                         message.data[mapping.bits[0] : mapping.bits[1]]
                     ),
-                },
+                }),
             )
 
     async def forward_obd2_data_socket_message(self, message: can.Message) -> None:
@@ -117,12 +117,12 @@ class CANSniffer:
         if mapping is not None:
             await self.websockets.broadcast_to_scope(
                 scope="data",
-                message={
+                message=serialise_json({
                     "timestamp": message.timestamp * 1000,
                     "name": mapping.name,
                     "value": mapping.format(message.data[3:7]),
                     "unit": mapping.unit,
-                },
+                }),
             )
 
     def update_supported_pids(self, message: can.Message) -> None:
@@ -283,7 +283,7 @@ class CANSniffer:
                 await self.forward_can_socket_message(message)
 
                 if can_mappings.get(message.arbitration_id) is not None:
-                    self.forward_can_data_socket_message(message)
+                    await self.forward_can_data_socket_message(message)
                     mappings = can_mappings[message.arbitration_id]
                     self.logger.info(
                         f"Received CAN-{message.arbitration_id}: "
@@ -294,11 +294,12 @@ class CANSniffer:
                     mapping = obd2_mappings.get(message.data[2])
 
                     if mapping is None:
-                        self.logger.warn(
+                        self.logger.warning(
                             f"Unmapped OBD2 PID seen: {bytearray_to_hex_string(message.data[2:3])}"
                         )
                     elif mapping.pid in support_pids:
-                        self.logger.info(f"Received {mapping.name}")
+                        self.logger.info(f"Received {mapping.name}:")
+                        self.logger.info(serialise_json(mapping.format(message.data[3:7]), indent=4))
                         self.update_supported_pids(message)
                     else:
                         self.logger.info(
@@ -306,9 +307,11 @@ class CANSniffer:
                             + f"{f' ({datetime.utcnow() - self.obd2_request_sent_at})' if mapping.pid == self.last_sent_obd2_pid else ''}: "
                             + f"{mapping.format(message.data[3:7])} {mapping.unit or ''}"
                         )
-                        self.forward_can_data_socket_message(message)
+                        await self.forward_can_data_socket_message(message)
         except asyncio.CancelledError:
             self.logger.info(f"CAN listener task received cancel instruction.")
+        except Exception as error:
+            self.logger.error(f"CAN listener task error: {error}")
 
     async def _run_requester(self) -> None:
         try:
@@ -364,13 +367,15 @@ class CANSniffer:
                         if self.supported_pids[pid]:
                             self.send_obd2_data_message(pid)
                         else:
-                            self.logger.warn(f"{obd2_mappings[pid].name} not supported")
+                            self.logger.warning(f"{obd2_mappings[pid].name} not supported")
 
                         i += 1
 
                 await asyncio.sleep(0.01)
         except asyncio.CancelledError:
-            self.logger.info(f"CAN reader task received cancel instruction.")
+            self.logger.info(f"CAN requester task received cancel instruction.")
+        except Exception as error:
+            self.logger.error(f"CAN requester task error: {error}")
 
     async def start(self) -> asyncio.Task:
         if self.sniffer_task is not None:
