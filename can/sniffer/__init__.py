@@ -317,7 +317,6 @@ class CANSniffer:
             i = 0
             while True:
                 if self.last_sent_obd2_pid == self.last_seen_obd2_pid:
-                    self.logger.info(self.supported_pids)
                     if self.supported_pids.get(0x01) is None:
                         self.logger.info(
                             f"Requesting {obd2_mappings[OBD2_PIDS.SUPPORTED_PIDS_01_0F.value].name}"
