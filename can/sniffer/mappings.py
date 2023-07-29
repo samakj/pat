@@ -2,7 +2,6 @@ from enum import Enum
 
 from models.mapping import CANMapping, OBD2Mapping
 from sniffer.formatters import (
-    bytearray_to_bool,
     supported_pids_formatter,
     first_byte_to_percentage,
     bytearray_to_int,
@@ -13,48 +12,54 @@ from sniffer.formatters import (
 can_mappings = {
     1477: [
         CANMapping(
-            name="handbrake", arbitration_id=1477, bits=(5, 6), format=bytearray_to_bool
+            name="handbrake",
+            arbitration_id=1477,
+            bits=(5, 6),
+            format=lambda bits: "1" in bits,
         )
     ],
     1549: [
         CANMapping(
-            name="boot open", arbitration_id=1549, bits=(0, 1), format=bytearray_to_bool
+            name="boot open",
+            arbitration_id=1549,
+            bits=(0, 1),
+            format=lambda bits: "1" in bits,
         ),
         CANMapping(
             name="drivers door open",
             arbitration_id=1549,
             bits=(3, 4),
-            format=bytearray_to_bool,
+            format=lambda bits: "1" in bits,
         ),
         CANMapping(
             name="passenger door open",
             arbitration_id=1549,
             bits=(4, 5),
-            format=bytearray_to_bool,
+            format=lambda bits: "1" in bits,
         ),
         CANMapping(
             name="side lights on",
             arbitration_id=1549,
             bits=(5, 6),
-            format=bytearray_to_bool,
+            format=lambda bits: "1" in bits,
         ),
         CANMapping(
             name="head lights on",
             arbitration_id=1549,
             bits=(6, 7),
-            format=bytearray_to_bool,
+            format=lambda bits: "1" in bits,
         ),
         CANMapping(
             name="left indicator on",
             arbitration_id=1549,
             bits=(10, 11),
-            format=bytearray_to_bool,
+            format=lambda bits: "1" in bits,
         ),
         CANMapping(
             name="right indicator on",
             arbitration_id=1549,
             bits=(11, 12),
-            format=bytearray_to_bool,
+            format=lambda bits: "1" in bits,
         ),
     ],
 }
@@ -107,14 +112,14 @@ class OBD2_PIDS(Enum):
     ODOMETER = 0xA6
 
 
-support_pids = {
+support_pids = [
     OBD2_PIDS.SUPPORTED_PIDS_01_0F.value,
     OBD2_PIDS.SUPPORTED_PIDS_21_3F.value,
     OBD2_PIDS.SUPPORTED_PIDS_41_5F.value,
     OBD2_PIDS.SUPPORTED_PIDS_61_7F.value,
     OBD2_PIDS.SUPPORTED_PIDS_81_9F.value,
     OBD2_PIDS.SUPPORTED_PIDS_A1_BF.value,
-}
+]
 
 obd2_mappings = {
     OBD2_PIDS.SUPPORTED_PIDS_01_0F.value: OBD2Mapping(

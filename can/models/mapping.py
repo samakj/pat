@@ -6,7 +6,7 @@ class CANMapping(BaseModel):
     arbitration_id: int
     name: str
     bits: tuple[int, int]
-    format: Callable[[bytearray], Any]
+    format: Callable[[str], Any]
 
 
 class OBD2Mapping(BaseModel):

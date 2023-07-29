@@ -1,6 +1,7 @@
 import asyncio
 from typing import Optional
 from datetime import datetime, timedelta
+from math import ceil
 import can
 from sniffer.mappings import (
     can_mappings,
@@ -40,6 +41,8 @@ PID_REQUEST_ORDER = [
     OBD2_PIDS.ODOMETER.value,
 ]
 
+MIN_READING_GAP = 0.1
+
 
 class CANSniffer:
     websockets: WebsocketsStore
@@ -56,6 +59,7 @@ class CANSniffer:
     last_sent_obd2_pid: Optional[int]
     last_seen_obd2_pid: Optional[int]
     supported_pids: dict[int, bool]
+    last_requested_obd2_pid: dict[int, datetime]
 
     def __init__(
         self,
@@ -74,6 +78,7 @@ class CANSniffer:
         self.last_sent_obd2_pid = None
         self.last_seen_obd2_pid = None
         self.supported_pids = {}
+        self.last_requested_obd2_pid = {}
 
     async def forward_can_socket_message(self, message: can.Message) -> None:
         await self.websockets.broadcast_to_scope(
@@ -102,13 +107,19 @@ class CANSniffer:
         for mapping in can_mappings.get(message.arbitration_id, []):
             await self.websockets.broadcast_to_scope(
                 scope="data",
-                message=serialise_json({
-                    "timestamp": message.timestamp * 1000,
-                    "name": mapping.name,
-                    "value": mapping.format(
-                        message.data[mapping.bits[0] : mapping.bits[1]]
-                    ),
-                }),
+                message=serialise_json(
+                    {
+                        "timestamp": message.timestamp * 1000,
+                        "type": "can",
+                        "aid": f"{mapping.arbitration_id}[{mapping.bits[0]}:{mapping.bits[1]}]",
+                        "name": mapping.name,
+                        "value": mapping.format(
+                            bytearray_to_bit_string(message.data)[
+                                mapping.bits[0] : mapping.bits[1]
+                            ]
+                        ),
+                    }
+                ),
             )
 
     async def forward_obd2_data_socket_message(self, message: can.Message) -> None:
@@ -117,12 +128,16 @@ class CANSniffer:
         if mapping is not None:
             await self.websockets.broadcast_to_scope(
                 scope="data",
-                message=serialise_json({
-                    "timestamp": message.timestamp * 1000,
-                    "name": mapping.name,
-                    "value": mapping.format(message.data[3:7]),
-                    "unit": mapping.unit,
-                }),
+                message=serialise_json(
+                    {
+                        "timestamp": message.timestamp * 1000,
+                        "type": "obd2",
+                        "pid": mapping.pid,
+                        "name": mapping.name,
+                        "value": mapping.format(message.data[3:7]),
+                        "unit": mapping.unit,
+                    }
+                ),
             )
 
     def update_supported_pids(self, message: can.Message) -> None:
@@ -133,6 +148,10 @@ class CANSniffer:
                 **self.supported_pids,
                 **mapping.format(message.data[3:7]),
             }
+
+    def set_pids_unsupported(self, start: int, end: int) -> None:
+        for i in range(1 + end - start):
+            self.supported_pids[start + i] = False
 
     def send_obd2_message(self, service: int, pid: Optional[int] = None) -> None:
         if self.bus is None:
@@ -301,9 +320,12 @@ class CANSniffer:
                         self.logger.info(f"Received {mapping.name}:")
                         self.update_supported_pids(message)
                     else:
+                        delta = (
+                            datetime.utcnow() - self.obd2_request_sent_at
+                        ).total_seconds()
                         self.logger.info(
                             f"Received {mapping.name}"
-                            + f"{f' ({datetime.utcnow() - self.obd2_request_sent_at})' if mapping.pid == self.last_sent_obd2_pid else ''}: "
+                            + f"{f' ({ceil(delta * 1000)}ms)' if mapping.pid == self.last_sent_obd2_pid else ''}: "
                             + f"{mapping.format(message.data[3:7])} {mapping.unit or ''}"
                         )
                         await self.forward_can_data_socket_message(message)
@@ -316,61 +338,52 @@ class CANSniffer:
         try:
             i = 0
             while True:
-                if self.last_sent_obd2_pid == self.last_seen_obd2_pid or datetime.utcnow() - self.obd2_request_sent_at > timedelta(milliseconds=1000):
-                    if self.last_sent_obd2_pid is None:
+                if (
+                    self.last_sent_obd2_pid == self.last_seen_obd2_pid
+                    or datetime.utcnow() - self.obd2_request_sent_at
+                    > timedelta(seconds=1)
+                ):
+                    timed_out = self.last_sent_obd2_pid != self.last_seen_obd2_pid
+                    if timed_out:
+                        self.logger.warning(
+                            f"Request for {obd2_mappings[self.last_sent_obd2_pid].name} timed out."
+                        )
+                    if timed_out and self.last_sent_obd2_pid in support_pids:
+                        self.logger.warning(
+                            f"Setting {obd2_mappings[self.last_sent_obd2_pid].name} as unsupported."
+                        )
+                        self.set_pids_unsupported(
+                            self.last_sent_obd2_pid, self.last_sent_obd2_pid + 31
+                        )
+
+                    if i < len(support_pids):
                         self.logger.info(
-                            f"Requesting {obd2_mappings[OBD2_PIDS.SUPPORTED_PIDS_01_0F.value].name}"
+                            f"Requesting {obd2_mappings[support_pids[i]].name}"
                         )
-                        self.send_obd2_data_message(
-                            OBD2_PIDS.SUPPORTED_PIDS_01_0F.value
-                        )
-                    elif self.last_sent_obd2_pid is OBD2_PIDS.SUPPORTED_PIDS_01_0F.value:
-                        self.logger.info(
-                            f"Requesting {obd2_mappings[OBD2_PIDS.SUPPORTED_PIDS_21_3F.value].name}"
-                        )
-                        self.send_obd2_data_message(
-                            OBD2_PIDS.SUPPORTED_PIDS_21_3F.value
-                        )
-                    elif self.last_sent_obd2_pid is OBD2_PIDS.SUPPORTED_PIDS_21_3F.value:
-                        self.logger.info(
-                            f"Requesting {obd2_mappings[OBD2_PIDS.SUPPORTED_PIDS_41_5F.value].name}"
-                        )
-                        self.send_obd2_data_message(
-                            OBD2_PIDS.SUPPORTED_PIDS_41_5F.value
-                        )
-                    elif self.last_sent_obd2_pid is OBD2_PIDS.SUPPORTED_PIDS_41_5F.value:
-                        self.logger.info(
-                            f"Requesting {obd2_mappings[OBD2_PIDS.SUPPORTED_PIDS_61_7F.value].name}"
-                        )
-                        self.send_obd2_data_message(
-                            OBD2_PIDS.SUPPORTED_PIDS_61_7F.value
-                        )
-                    elif self.last_sent_obd2_pid is OBD2_PIDS.SUPPORTED_PIDS_61_7F.value:
-                        self.logger.info(
-                            f"Requesting {obd2_mappings[OBD2_PIDS.SUPPORTED_PIDS_81_9F.value].name}"
-                        )
-                        self.send_obd2_data_message(
-                            OBD2_PIDS.SUPPORTED_PIDS_81_9F.value
-                        )
-                    elif self.last_sent_obd2_pid is OBD2_PIDS.SUPPORTED_PIDS_81_9F.value:
-                        self.logger.info(
-                            f"Requesting {obd2_mappings[OBD2_PIDS.SUPPORTED_PIDS_A1_BF.value].name}"
-                        )
-                        self.send_obd2_data_message(
-                            OBD2_PIDS.SUPPORTED_PIDS_A1_BF.value
-                        )
+                        self.send_obd2_data_message(support_pids[i])
+                        i += 1
                     else:
-                        pid = PID_REQUEST_ORDER[i % len(PID_REQUEST_ORDER)]
+                        pid = PID_REQUEST_ORDER[
+                            (i - len(support_pids)) % len(PID_REQUEST_ORDER)
+                        ]
                         self.logger.info(f"Requesting {obd2_mappings[pid].name}")
 
-                        if self.supported_pids.get(pid) != False:
-                            if self.supported_pids.get(pid) == None:
-                                self.logger.warning(f"{obd2_mappings[pid].name} support unknown")
-                            self.send_obd2_data_message(pid)
+                        if self.supported_pids.get(pid):
+                            if datetime.utcnow() - self.last_requested_obd2_pid(
+                                pid, datetime(year=0, month=0, date=0)
+                            ) > timedelta(seconds=MIN_READING_GAP):
+                                self.send_obd2_data_message(pid)
+                                self.last_requested_obd2_pid[pid] = datetime.utcnow()
+                                i += 1
+                            else:
+                                await asyncio.sleep(0.01)
+                                continue
                         else:
-                            self.logger.warning(f"{obd2_mappings[pid].name} not supported")
-
-                        i += 1
+                            self.logger.warning(
+                                f"{obd2_mappings[pid].name} not supported"
+                            )
+                            i += 1
+                            continue
 
                 await asyncio.sleep(0.01)
         except asyncio.CancelledError:
