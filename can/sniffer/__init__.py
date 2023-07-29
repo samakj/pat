@@ -112,7 +112,7 @@ class CANSniffer:
             )
 
     async def forward_obd2_data_socket_message(self, message: can.Message) -> None:
-        mapping = obd2_mappings.get(message.arbitration_id)
+        mapping = obd2_mappings.get(message.data[2])
 
         if mapping is not None:
             await self.websockets.broadcast_to_scope(
@@ -126,7 +126,7 @@ class CANSniffer:
             )
 
     def update_supported_pids(self, message: can.Message) -> None:
-        mapping = obd2_mappings.get(message.arbitration_id)
+        mapping = obd2_mappings.get(message.data[2])
 
         if mapping is not None:
             self.supported_pids = {
