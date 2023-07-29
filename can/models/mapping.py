@@ -1,9 +1,16 @@
-from typing import Any, Callable
+from typing import Any, Callable, Optional
 from pydantic import BaseModel
 
 
-class DataMapping(BaseModel):
-    name: str
+class CANMapping(BaseModel):
     arbitration_id: int
+    name: str
     bits: tuple[int, int]
-    format: Callable[[str], Any]
+    format: Callable[[bytearray], Any]
+
+
+class OBD2Mapping(BaseModel):
+    pid: int
+    name: str
+    format: Callable[[bytearray], Any]
+    unit: Optional[str] = None
