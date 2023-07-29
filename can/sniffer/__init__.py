@@ -1,6 +1,6 @@
 import asyncio
 from typing import Optional
-from datetime import datetime
+from datetime import datetime, timedelta
 import can
 from sniffer.mappings import (
     can_mappings,
@@ -316,7 +316,7 @@ class CANSniffer:
         try:
             i = 0
             while True:
-                if self.last_sent_obd2_pid == self.last_seen_obd2_pid:
+                if self.last_sent_obd2_pid == self.last_seen_obd2_pid or datetime.utcnow() - self.obd2_request_sent_at > timedelta(milliseconds=1000):
                     if self.supported_pids.get(0x01) is None:
                         self.logger.info(
                             f"Requesting {obd2_mappings[OBD2_PIDS.SUPPORTED_PIDS_01_0F.value].name}"
