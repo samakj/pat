@@ -159,7 +159,7 @@ class CANSniffer:
     def send_obd2_data_message(self, pid: int) -> None:
         self.last_sent_obd2_pid = pid
         self.obd2_request_sent_at = datetime.utcnow()
-        self.send_obd2_message(service=0x01, mode=pid)
+        self.send_obd2_message(service=0x01, pid=pid)
 
     def send_obd2_dtc_message(self) -> None:
         self.send_obd2_message(service=0x03)
