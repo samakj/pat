@@ -164,57 +164,112 @@ class CANSniffer:
     def send_obd2_dtc_message(self) -> None:
         self.send_obd2_message(service=0x03)
 
+    async def _start_tasks(self) -> None:
+        if self.listener_task is None:
+            self.logger.info("Starting can listener.")
+            self.listener_task = asyncio.create_task(self._run_listener())
+        else:
+            raise ValueError("Listener task already exists.")
+        if self.requester_task is None:
+            self.logger.info("Starting can requester.")
+            self.requester_task = asyncio.create_task(self._run_requester())
+        else:
+            raise ValueError("Requester task already exists.")
+
+    async def _stop_tasks(self) -> None:
+        if self.requester_task is not None:
+            self.logger.info("Stopping can requester.")
+            self.requester_task.cancel()
+            await self.requester_task
+            self.requester_task = None
+        if self.listener_task is not None:
+            self.logger.info("Stopping can listener.")
+            self.listener_task.cancel()
+            await self.listener_task
+
+    def _start_can(self) -> None:
+        loop = asyncio.get_running_loop()
+        if self.bus is None:
+            self.logger.info("Starting can bus.")
+            self.bus = can.Bus(
+                channel="can0",
+                bustype="socketcan",
+                receive_own_messages=True,
+            )
+        else:
+            raise ValueError("Bus already exists.")
+        if self.reader is None:
+            self.logger.info("Starting can reader.")
+            self.reader = can.AsyncBufferedReader()
+        else:
+            raise ValueError("Reader already exists.")
+        if self.notifier is None:
+            self.logger.info("Starting can notifier.")
+            self.notifier = can.Notifier(self.bus, [self.reader], loop=loop)
+        else:
+            raise ValueError("Notifier already exists.")
+
+    def _stop_can(self) -> None:
+        if self.notifier is not None:
+            self.logger.info("Stopping can notifier.")
+            self.notifier.stop()
+            self.notifier = None
+        if self.reader is not None:
+            self.logger.info("Stopping can reader.")
+            self.reader.stop()
+            self.reader = None
+        if self.bus is not None:
+            self.logger.info("Stopping can bus.")
+            self.bus.shutdown()
+            self.bus = None
+
     async def _run_sniffer(self) -> None:
+        init = True
         try:
             while True:
+                if init:
+                    pass
+                elif (
+                    self.listener_task is None
+                    or self.listener_task.cancelled()
+                    or self.listener_task.done()
+                ):
+                    self.logger.warning("listener_task in bad state, restarting")
+                elif (
+                    self.requester_task is None
+                    or self.requester_task.cancelled()
+                    or self.requester_task.done()
+                ):
+                    self.logger.warning("requester_task in bad state, restarting")
+                elif self.bus is None or self.bus.state != can.BusState.ACTIVE:
+                    self.logger.warning("bus in bad state, restarting")
+                elif self.reader is None:
+                    self.logger.warning("reader in bad state, restarting")
+                elif self.notifier is None:
+                    self.logger.warning("notifier in bad state, restarting")
+                else:
+                    # All good in the hood
+                    await asyncio.sleep(1)
+                    continue
+
+                await self._stop_tasks()
+                self._stop_can()
+
                 try:
-                    loop = asyncio.get_running_loop()
-                    self.logger.info("Starting can bus.")
-                    self.bus = self.bus or can.Bus(
-                        channel="can0", bustype="socketcan", receive_own_messages=True
-                    )
-                    self.logger.info("Starting can reader.")
-                    self.reader = self.reader or can.AsyncBufferedReader()
-                    self.logger.info("Starting can notifier.")
-                    self.notifier = self.notifier or can.Notifier(
-                        self.bus, [self.reader], loop=loop
-                    )
-
-                    self.logger.info("Starting can listener.")
-                    self.listener_task = asyncio.create_task(self._run_listener())
-                    self.logger.info("Starting can requester.")
-                    self.requester_task = asyncio.create_task(self._run_requester())
-
+                    self._start_can()
+                    await self._start_tasks()
+                    init = False
                 except Exception as error:
-                    if self.listener_task is not None:
-                        self.logger.info("Stopping can listener.")
-                        self.listener_task.cancel()
-                        await self.listener_task
-                    if self.requester_task is not None:
-                        self.logger.info("Stopping can requester.")
-                        self.requester_task.cancel()
-                        await self.requester_task
-                        self.requester_task = None
-                    if self.notifier is not None:
-                        self.logger.info("Stopping can notifier.")
-                        self.notifier.stop()
-                        self.notifier = None
-                    if self.reader is not None:
-                        self.logger.info("Stopping can reader.")
-                        self.reader.stop()
-                        self.reader = None
-                    if self.bus is not None:
-                        self.logger.info("Stopping can bus.")
-                        self.bus.shutdown()
-                        self.bus = None
+                    await self._stop_tasks()
+                    self._stop_can()
 
                     if isinstance(error, asyncio.CancelledError):
                         raise
 
-                    self.logger.error(f"CAN sniffer task exception: {error}")
-                    self.logger.info("Restarting sniffer in 5s")
+                    self.logger.error(f"CAN sniffer start up failed: {error}")
+                    self.logger.info("Restarting sniffer in 1s")
 
-                await asyncio.sleep(5)
+                await asyncio.sleep(1)
 
         except asyncio.CancelledError:
             self.logger.info(f"CAN sniffer task received cancel instruction.")
