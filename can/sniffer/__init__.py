@@ -284,11 +284,11 @@ class CANSniffer:
 
                 if can_mappings.get(message.arbitration_id) is not None:
                     await self.forward_can_data_socket_message(message)
-                    mappings = can_mappings[message.arbitration_id]
-                    self.logger.info(
-                        f"Received CAN-{message.arbitration_id}: "
-                        + f"{' ,'.join([mapping.name for mapping in mappings])}"
-                    )
+                    # mappings = can_mappings[message.arbitration_id]
+                    # self.logger.info(
+                    #     f"Received CAN-{message.arbitration_id}: "
+                    #     + f"{' ,'.join([mapping.name for mapping in mappings])}"
+                    # )
                 if message.arbitration_id == OBD2_RESPONSE:
                     self.last_seen_obd2_pid = message.data[2]
                     mapping = obd2_mappings.get(message.data[2])
