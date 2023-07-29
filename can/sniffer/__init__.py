@@ -82,8 +82,8 @@ class CANSniffer:
                 {
                     "timestamp": message.timestamp * 1000,
                     "bits": bytearray_to_bit_string(message.data),
-                    "bytes": [byte for byte in bytes],
-                    "hex": [format(byte, "02x") for byte in bytes],
+                    "bytes": [byte for byte in message.data],
+                    "hex": [format(byte, "02x") for byte in message.data],
                     "arbitration_id": message.arbitration_id,
                     "is_extended_id": message.is_extended_id,
                     "is_remote_frame": message.is_remote_frame,
