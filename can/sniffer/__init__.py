@@ -227,7 +227,7 @@ class CANSniffer:
             if can_mappings.get(message.arbitration_id) is not None:
                 self.forward_can_data_socket_message(message)
                 mappings = can_mappings[message.arbitration_id]
-                Logger.info(
+                self.logger.info(
                     f"Received CAN-{message.arbitration_id}: "
                     + f"{' ,'.join([mapping.name for mapping in mappings])}"
                 )
@@ -240,10 +240,10 @@ class CANSniffer:
                         f"Unmapped OBD2 PID seen: {bytearray_to_hex_string(message.data[2:3])}"
                     )
                 elif mapping.pid in support_pids:
-                    Logger.info(f"Received {mapping.name}")
+                    self.logger.info(f"Received {mapping.name}")
                     self.update_supported_pids(message)
                 else:
-                    Logger.info(
+                    self.logger.info(
                         f"Received {mapping.name}"
                         + f"{f' ({datetime.utcnow() - self.obd2_request_sent_at})' if mapping.pid == self.last_sent_obd2_pid else ''}: "
                         + f"{mapping.format(message.data[3:7])} {mapping.unit or ''}"
@@ -255,43 +255,43 @@ class CANSniffer:
         while True:
             if self.last_sent_obd2_pid == self.last_seen_obd2_pid:
                 if self.supported_pids.get(0x01) is None:
-                    Logger.info(
+                    self.info(
                         f"Requesting {obd2_mappings[OBD2_PIDS.SUPPORTED_PIDS_01_0F.value].name}"
                     )
                     self.send_obd2_data_message(OBD2_PIDS.SUPPORTED_PIDS_01_0F.value)
                 elif self.supported_pids.get(0x21) is None:
-                    Logger.info(
+                    self.info(
                         f"Requesting {obd2_mappings[OBD2_PIDS.SUPPORTED_PIDS_21_3F.value].name}"
                     )
                     self.send_obd2_data_message(OBD2_PIDS.SUPPORTED_PIDS_21_3F.value)
                 elif self.supported_pids.get(0x41) is None:
-                    Logger.info(
+                    self.info(
                         f"Requesting {obd2_mappings[OBD2_PIDS.SUPPORTED_PIDS_41_5F.value].name}"
                     )
                     self.send_obd2_data_message(OBD2_PIDS.SUPPORTED_PIDS_41_5F.value)
                 elif self.supported_pids.get(0x61) is None:
-                    Logger.info(
+                    self.info(
                         f"Requesting {obd2_mappings[OBD2_PIDS.SUPPORTED_PIDS_61_7F.value].name}"
                     )
                     self.send_obd2_data_message(OBD2_PIDS.SUPPORTED_PIDS_61_7F.value)
                 elif self.supported_pids.get(0x81) is None:
-                    Logger.info(
+                    self.info(
                         f"Requesting {obd2_mappings[OBD2_PIDS.SUPPORTED_PIDS_81_9F.value].name}"
                     )
                     self.send_obd2_data_message(OBD2_PIDS.SUPPORTED_PIDS_81_9F.value)
                 elif self.supported_pids.get(0xA1) is None:
-                    Logger.info(
+                    self.info(
                         f"Requesting {obd2_mappings[OBD2_PIDS.SUPPORTED_PIDS_A1_BF.value].name}"
                     )
                     self.send_obd2_data_message(OBD2_PIDS.SUPPORTED_PIDS_A1_BF.value)
                 else:
                     pid = PID_REQUEST_ORDER[i % len(PID_REQUEST_ORDER)]
-                    Logger.info(f"Requesting {obd2_mappings[pid].name}")
+                    self.info(f"Requesting {obd2_mappings[pid].name}")
 
                     if self.supported_pids[pid]:
                         self.send_obd2_data_message(pid)
                     else:
-                        Logger.warn(f"{obd2_mappings[pid].name} not supported")
+                        self.warn(f"{obd2_mappings[pid].name} not supported")
 
                     i += 1
 
