@@ -273,6 +273,8 @@ class CANSniffer:
 
         except asyncio.CancelledError:
             self.logger.info(f"CAN sniffer task received cancel instruction.")
+            await self._stop_tasks()
+            self._stop_can()
 
     async def _run_listener(self) -> None:
         while True:
