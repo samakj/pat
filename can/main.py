@@ -3,6 +3,7 @@ from speedyapi import SpeedyAPI
 from speedyapi.websockets import WebsocketsStore
 from sniffer import CANSniffer
 
+from routes import BASE_V0_ROUTER
 from routes.can import CAN_V0_ROUTER
 
 app = SpeedyAPI()
@@ -10,6 +11,7 @@ app.config = config
 app.websockets = WebsocketsStore()
 app.sniffer = CANSniffer(websockets=app.websockets, logger=app.logger)
 
+app.include_router(BASE_V0_ROUTER)
 app.include_router(CAN_V0_ROUTER)
 
 

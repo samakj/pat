@@ -328,7 +328,7 @@ class CANSniffer:
                             + f"{f' ({ceil(delta * 1000)}ms)' if mapping.pid == self.last_sent_obd2_pid else ''}: "
                             + f"{mapping.format(message.data[3:7])} {mapping.unit or ''}"
                         )
-                        await self.forward_can_data_socket_message(message)
+                        await self.forward_obd2_data_socket_message(message)
         except asyncio.CancelledError:
             self.logger.info(f"CAN listener task received cancel instruction.")
         except Exception as error:
