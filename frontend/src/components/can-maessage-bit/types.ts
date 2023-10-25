@@ -1,6 +1,6 @@
 /** @format */
 
-import { CANMessageType } from '../../store/slices/devices/types';
+import { CANMessageType } from '../../store/slices/can/types';
 
 export interface BitPropsType {
   arbitrationId: CANMessageType['arbitration_id'];

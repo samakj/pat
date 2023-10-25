@@ -7,6 +7,7 @@ import { RouterPropsType } from './types';
 
 import { PageStructure } from '../components/page-structure';
 import { Index } from '../views/index';
+import { CAN } from '../views/can';
 
 export const ContextualRouter: React.FunctionComponent<RouterPropsType> = ({
   location,
@@ -20,12 +21,13 @@ export const ContextualRouter: React.FunctionComponent<RouterPropsType> = ({
 
 export const Routes: React.FunctionComponent = () => {
   return (
-      <PageStructure>
-        <RoutesWrapper>
-          <Route path="/" element={<Index />} />
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </RoutesWrapper>
-      </PageStructure>
+    <PageStructure>
+      <RoutesWrapper>
+        <Route path="/" element={<Index />} />
+        <Route path="/can" element={<CAN />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </RoutesWrapper>
+    </PageStructure>
   );
 };
 

@@ -1,7 +1,7 @@
 /** @format */
 
 import React from 'react';
-import { MdHomeFilled } from 'react-icons/md';
+import { MdHomeFilled, MdExtension } from 'react-icons/md';
 
 export const navigationConfig: {
   [key: string]: {
@@ -15,5 +15,10 @@ export const navigationConfig: {
     path: '/',
     icon: <MdHomeFilled />,
     name: 'Home',
+  },
+  '/can': {
+    path: '/can',
+    icon: <MdExtension />,
+    name: 'CAN',
   },
 };

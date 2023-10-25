@@ -1,7 +1,7 @@
 /** @format */
 
 import React from 'react';
-import { MappingType } from '../../store/slices/devices/types';
+import { MappingType } from '../../store/slices/can/types';
 import { useSelector } from '../../store';
 import { ParsedDataRow } from './parsed-data-row';
 

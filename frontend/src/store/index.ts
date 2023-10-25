@@ -3,7 +3,7 @@
 import { configureStore } from '@reduxjs/toolkit';
 import { EqualityFn, useDispatch as _useDispatch, useSelector as _useSelector } from 'react-redux';
 import { isClient } from '../utils';
-import { CANSlice } from './slices/devices/slice';
+import { CANSlice } from './slices/can/slice';
 
 export const store = configureStore({
   reducer: { [CANSlice.name]: CANSlice.reducer },

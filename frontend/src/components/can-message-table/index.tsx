@@ -1,7 +1,7 @@
 /** @format */
 
 import React from 'react';
-import { CANMessageType } from '../../store/slices/devices/types';
+import { CANMessageType } from '../../store/slices/can/types';
 import { DataRow } from './data-row';
 import { useSelector } from '../../store';
 import { CANMessageTablePropsType } from './types';

@@ -8,7 +8,7 @@ import { CANWebsocketMeta } from '../components/can-websocket-meta';
 import { useDispatch } from '../store';
 import { getMappings } from '../store/slices/can/thunks';
 
-export const Index: React.FunctionComponent = () => {
+export const CAN: React.FunctionComponent = () => {
   useCANDataWebsocket({});
   const dispatch = useDispatch();
 
